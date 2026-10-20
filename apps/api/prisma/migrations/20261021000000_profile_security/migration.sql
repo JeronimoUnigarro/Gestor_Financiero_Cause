@@ -1,0 +1,4 @@
+ALTER TABLE `users`
+  ADD COLUMN `phone` VARCHAR(30) NULL,
+  ADD COLUMN `city` VARCHAR(100) NULL,
+  ADD COLUMN `avatar_data` LONGTEXT NULL;

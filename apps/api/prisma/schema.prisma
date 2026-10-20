@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum MovementType {
+  INCOME
+  EXPENSE
+}
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+enum AlertType {
+  BUDGET_NEAR @map("BUDGET_NEAR_LIMIT")
+  BUDGET_EXCEEDED
+  RECURRING_PAYMENT_DUE
+  GOAL_COMPLETED
+  GOAL_DEADLINE
+}
+enum PaymentFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model User {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  email String @unique(map:"uq_users_email") @db.VarChar(191)
+  passwordHash String @map("password_hash") @db.VarChar(255)
+  name String @db.VarChar(120)
+  phone String? @db.VarChar(30)
+  city String? @db.VarChar(100)
+  avatarData String? @map("avatar_data") @db.LongText
+  currency String @default("COP") @db.Char(3)
+  isActive Boolean @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  categories Category[]
+  movements Movement[]
+  budgets Budget[]
+  goals Goal[]
+  contributions Contribution[]
+  alerts Alert[]
+  recurringPayments RecurringPayment[]
+  @@map("users")
+}
+
+model Category {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  userId BigInt? @map("user_id") @db.UnsignedBigInt
+  name String @db.VarChar(100)
+  type MovementType
+  description String? @db.VarChar(255)
+  isActive Boolean @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  user User? @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_categories_user")
+  movements Movement[]
+  budgets Budget[]
+  recurringPayments RecurringPayment[]
+  @@unique([userId,name,type],map:"uq_categories_user_name_type")
+  @@index([type,isActive],map:"idx_categories_type_active")
+  @@map("categories")
+}
+
+model Movement {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  userId BigInt @map("user_id") @db.UnsignedBigInt
+  categoryId BigInt @map("category_id") @db.UnsignedBigInt
+  type MovementType
+  amount Decimal @db.Decimal(15,2)
+  date DateTime @map("transaction_date") @db.Date
+  description String? @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_transactions_user")
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_transactions_category")
+  @@index([userId,date,id],map:"idx_transactions_user_date")
+  @@index([userId,type,date],map:"idx_transactions_user_type_date")
+  @@index([categoryId,date],map:"idx_transactions_category_date")
+  @@map("financial_transactions")
+}
+
+model Budget {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  userId BigInt @map("user_id") @db.UnsignedBigInt
+  categoryId BigInt @map("category_id") @db.UnsignedBigInt
+  name String @db.VarChar(120)
+  limitAmount Decimal @map("amount_limit") @db.Decimal(15,2)
+  startDate DateTime @map("period_start") @db.Date
+  endDate DateTime @map("period_end") @db.Date
+  alertThreshold Decimal @default(80.00) @map("alert_threshold") @db.Decimal(5,2)
+  isActive Boolean @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_budgets_user")
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_budgets_category")
+  @@unique([userId,categoryId,startDate,endDate],map:"uq_budgets_user_category_period")
+  @@index([categoryId],map:"fk_budgets_category")
+  @@index([userId,startDate,endDate,isActive],map:"idx_budgets_user_period")
+  @@map("budgets")
+}
+
+model Goal {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  userId BigInt @map("user_id") @db.UnsignedBigInt
+  name String @db.VarChar(150)
+  description String? @db.VarChar(500)
+  targetAmount Decimal @map("target_amount") @db.Decimal(15,2)
+  targetDate DateTime @map("target_date") @db.Date
+  status GoalStatus @default(ACTIVE)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_goals_user")
+  contributions Contribution[]
+  @@index([userId,status,targetDate],map:"idx_goals_user_status_date")
+  @@map("savings_goals")
+}
+
+model Contribution {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  userId BigInt @map("user_id") @db.UnsignedBigInt
+  goalId BigInt @map("goal_id") @db.UnsignedBigInt
+  amount Decimal @db.Decimal(15,2)
+  date DateTime @map("contribution_date") @db.Date
+  idempotencyKey String? @map("idempotency_key") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_contributions_user")
+  goal Goal @relation(fields:[goalId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_contributions_goal")
+  @@unique([userId,idempotencyKey],map:"uq_contributions_idempotency")
+  @@index([goalId,date,id],map:"idx_contributions_goal_date")
+  @@index([userId,date],map:"idx_contributions_user_date")
+  @@map("goal_contributions")
+}
+
+model Alert {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  userId BigInt @map("user_id") @db.UnsignedBigInt
+  type AlertType
+  title String @db.VarChar(150)
+  message String @db.VarChar(500)
+  entityType String? @map("entity_type") @db.VarChar(50)
+  entityId BigInt? @map("entity_id") @db.UnsignedBigInt
+  deduplicationKey String @map("deduplication_key") @db.VarChar(191)
+  isRead Boolean @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  readAt DateTime? @map("read_at") @db.Timestamp(0)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_alerts_user")
+  @@unique([userId,deduplicationKey],map:"uq_alerts_deduplication")
+  @@index([userId,isRead,createdAt],map:"idx_alerts_user_read_date")
+  @@map("alerts")
+}
+
+model RecurringPayment {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  userId BigInt @map("user_id") @db.UnsignedBigInt
+  categoryId BigInt @map("category_id") @db.UnsignedBigInt
+  name String @db.VarChar(150)
+  amount Decimal @db.Decimal(15,2)
+  nextPaymentDate DateTime @map("next_payment_date") @db.Date
+  frequency PaymentFrequency @default(MONTHLY)
+  reminderDays Int @default(3) @map("reminder_days") @db.UnsignedInt
+  isActive Boolean @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_recurring_user")
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_recurring_category")
+  @@index([categoryId],map:"fk_recurring_category")
+  @@index([isActive,nextPaymentDate],map:"idx_recurring_due")
+  @@index([userId,isActive,nextPaymentDate],map:"idx_recurring_user_due")
+  @@map("recurring_payments")
+}
