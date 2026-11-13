@@ -77,4 +77,15 @@ describe('CAUCE application + MySQL integration', () => {
     const tooLarge = await app.createGoal(userA, { name: 'Insufficient balance case', targetAmount: '100.00', targetDate: date });
     await expect(app.contribute(userA, tooLarge.id.toString(), { amount: '21.00' }, `insufficient-${tag}`)).rejects.toThrow('No tienes saldo disponible suficiente.');
   });
+
+  it('returns isolated monthly analytics and a 30-day projection', async () => {
+    const own = await app.analytics(userA);
+    const empty = await app.analytics(userB);
+    expect(own.months).toHaveLength(6);
+    expect(own.forecast).toHaveLength(31);
+    expect(own.forecast[0].balance).toBe((await app.balance(userA)).available);
+    expect(own.categoryExpenses.length).toBeGreaterThan(0);
+    expect(empty.categoryExpenses).toHaveLength(0);
+    expect(empty.recurringPayments).toBe(0);
+  });
 });

@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Headers, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AppService } from '../application/app.service';
 import { AuthGuard, CurrentUser } from './auth';
-import { BudgetDto, CategoryDto, CategoryUpdateDto, ChangePasswordDto, ContributionDto, GoalDto, LoginDto, MovementDto, ProfileDto, RegisterDto } from './dto';
+import { AnalyzeFinancesDto, BudgetDto, CategoryDto, CategoryUpdateDto, ChangePasswordDto, ContributionDto, GoalDto, LoginDto, MovementDto, ProfileDto, RegisterDto } from './dto';
 
 @Controller()
 export class AppController {
@@ -24,6 +25,8 @@ export class AppController {
   @UseGuards(AuthGuard) @Post('movements/expense') expense(@CurrentUser() u:any,@Body() b:MovementDto) { return this.app.createMovement(u.sub,b,'EXPENSE'); }
   @UseGuards(AuthGuard) @Get('movements') movements(@CurrentUser() u:any,@Query() q:any) { return this.app.movements(u.sub,q); }
   @UseGuards(AuthGuard) @Get('balance') balance(@CurrentUser() u:any) { return this.app.balance(u.sub); }
+  @UseGuards(AuthGuard) @Get('analytics') analytics(@CurrentUser() u:any) { return this.app.analytics(u.sub); }
+  @UseGuards(AuthGuard) @Throttle({default:{limit:5,ttl:60000}}) @Post('ai/analyze') analyzeFinances(@CurrentUser() u:any,@Body() b:AnalyzeFinancesDto) { return this.app.analyzeFinances(u.sub,b.consent); }
   @UseGuards(AuthGuard) @Post('budgets') createBudget(@CurrentUser() u:any,@Body() b:BudgetDto) { return this.app.createBudget(u.sub,b); }
   @UseGuards(AuthGuard) @Patch('budgets/:id') updateBudget(@CurrentUser() u:any,@Param('id') id:string,@Body() b:BudgetDto) { return this.app.updateBudget(u.sub,id,b); }
   @UseGuards(AuthGuard) @Get('budgets/:id/movements') budgetMovements(@CurrentUser() u:any,@Param('id') id:string) { return this.app.budgetMovements(u.sub,id); }
