@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: cauce-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm ci && npm run db:generate && npm run build --workspace apps/api
+    startCommand: npm run db:migrate && npm run start:prod --workspace apps/api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEB_ORIGIN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.1-flash-lite
+      - key: BUDGET_NEAR_THRESHOLD
+        value: "80.00"

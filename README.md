@@ -1,11 +1,11 @@
 # CAUCE
 
-Aplicación de finanzas personales para Colombia. Monorepo con frontend Next.js, API NestJS y persistencia MySQL mediante Prisma.
+Aplicación de finanzas personales para Colombia. Monorepo con frontend Next.js, API NestJS y persistencia PostgreSQL mediante Prisma. Las migraciones antiguas de MySQL se conservan como referencia en `apps/api/prisma/mysql-migrations-legacy`.
 
 ## Requisitos
 
 - Node.js 20 o superior y npm.
-- MySQL 8.0 o superior y una base `cause` accesible.
+- PostgreSQL 14 o superior y una base `cause` accesible.
 
 ## Inicio local
 
@@ -16,7 +16,7 @@ Aplicación de finanzas personales para Colombia. Monorepo con frontend Next.js,
 5. Carga categorías globales con `npm run db:seed` solo si hace falta.
 6. Inicia API y frontend con `npm run dev`.
 
-Frontend: http://localhost:3000. API: http://localhost:3001/api. El navegador se comunica solo con la API; la conexión MySQL permanece en el backend.
+Frontend: http://localhost:3000. API: http://localhost:3001/api. El navegador se comunica solo con la API; la conexión PostgreSQL permanece en el backend.
 
 Para evolucionar el esquema, crea migraciones incrementales revisables con `npm --workspace apps/api run prisma:dev -- --name nombre_cambio`. No alteres tablas con SQL manual en una base con datos sin respaldo y revisión previa.
 
@@ -32,12 +32,12 @@ La proyección es una estimación explicable, no una garantía. No anticipa ingr
 
 ## Pruebas y compilación
 
-- `npm test`: pruebas unitarias y de integración contra MySQL `cause`. La integración crea cuentas de prueba con correo único y elimina únicamente sus filas al terminar.
+- `npm test`: pruebas unitarias y de integración contra PostgreSQL `cause`. La integración crea cuentas de prueba con correo único y elimina únicamente sus filas al terminar.
 - `npm run build`: compila la API y construye el frontend de producción.
 
 ## Despliegue
 
-Define `DATABASE_URL`, `JWT_SECRET` (32 caracteres aleatorios o más), `API_PORT`, `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL` y `GEMINI_API_KEY` en el entorno del backend. CAUCE IA usa `gemini-3.1-flash-lite` por defecto; `GEMINI_MODEL` permite cambiarlo. Obtén la clave en Google AI Studio. Guárdala en el backend, nunca en variables `NEXT_PUBLIC_*`. Usa TLS, una cuenta MySQL de privilegio mínimo y un gestor de secretos. El despliegue está explícitamente fuera del alcance actual. No apliques migraciones a producción sin respaldo verificado.
+El diseño de despliegue previsto es Next.js en Vercel, API NestJS en Render y PostgreSQL en Supabase. Sigue [la guía de despliegue](docs/DESPLIEGUE.md) para configurar servicios y variables. El baseline PostgreSQL está pensado para una base nueva y vacía; no conecta ni migra automáticamente los datos de una base MySQL existente. CAUCE IA usa `gemini-3.1-flash-lite` por defecto; `GEMINI_MODEL` permite cambiarlo. Guarda `GEMINI_API_KEY` únicamente en Render.
 
 ## Documentación
 

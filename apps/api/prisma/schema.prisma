@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -31,13 +31,13 @@ enum PaymentFrequency {
 }
 
 model User {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
   email String @unique(map:"uq_users_email") @db.VarChar(191)
   passwordHash String @map("password_hash") @db.VarChar(255)
   name String @db.VarChar(120)
   phone String? @db.VarChar(30)
   city String? @db.VarChar(100)
-  avatarData String? @map("avatar_data") @db.LongText
+  avatarData String? @map("avatar_data") @db.Text
   currency String @default("COP") @db.Char(3)
   isActive Boolean @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
@@ -53,8 +53,8 @@ model User {
 }
 
 model Category {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  userId BigInt? @map("user_id") @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
+  userId BigInt? @map("user_id")
   name String @db.VarChar(100)
   type MovementType
   description String? @db.VarChar(255)
@@ -71,9 +71,9 @@ model Category {
 }
 
 model Movement {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  userId BigInt @map("user_id") @db.UnsignedBigInt
-  categoryId BigInt @map("category_id") @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  categoryId BigInt @map("category_id")
   type MovementType
   amount Decimal @db.Decimal(15,2)
   date DateTime @map("transaction_date") @db.Date
@@ -89,9 +89,9 @@ model Movement {
 }
 
 model Budget {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  userId BigInt @map("user_id") @db.UnsignedBigInt
-  categoryId BigInt @map("category_id") @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  categoryId BigInt @map("category_id")
   name String @db.VarChar(120)
   limitAmount Decimal @map("amount_limit") @db.Decimal(15,2)
   startDate DateTime @map("period_start") @db.Date
@@ -101,16 +101,16 @@ model Budget {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_budgets_user")
-  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_budgets_category")
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_budgets_category_pg")
   @@unique([userId,categoryId,startDate,endDate],map:"uq_budgets_user_category_period")
-  @@index([categoryId],map:"fk_budgets_category")
+  @@index([categoryId],map:"idx_budgets_category")
   @@index([userId,startDate,endDate,isActive],map:"idx_budgets_user_period")
   @@map("budgets")
 }
 
 model Goal {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  userId BigInt @map("user_id") @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
   name String @db.VarChar(150)
   description String? @db.VarChar(500)
   targetAmount Decimal @map("target_amount") @db.Decimal(15,2)
@@ -125,9 +125,9 @@ model Goal {
 }
 
 model Contribution {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  userId BigInt @map("user_id") @db.UnsignedBigInt
-  goalId BigInt @map("goal_id") @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  goalId BigInt @map("goal_id")
   amount Decimal @db.Decimal(15,2)
   date DateTime @map("contribution_date") @db.Date
   idempotencyKey String? @map("idempotency_key") @db.VarChar(100)
@@ -141,13 +141,13 @@ model Contribution {
 }
 
 model Alert {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  userId BigInt @map("user_id") @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
   type AlertType
   title String @db.VarChar(150)
   message String @db.VarChar(500)
   entityType String? @map("entity_type") @db.VarChar(50)
-  entityId BigInt? @map("entity_id") @db.UnsignedBigInt
+  entityId BigInt? @map("entity_id")
   deduplicationKey String @map("deduplication_key") @db.VarChar(191)
   isRead Boolean @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
@@ -159,20 +159,20 @@ model Alert {
 }
 
 model RecurringPayment {
-  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
-  userId BigInt @map("user_id") @db.UnsignedBigInt
-  categoryId BigInt @map("category_id") @db.UnsignedBigInt
+  id BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  categoryId BigInt @map("category_id")
   name String @db.VarChar(150)
   amount Decimal @db.Decimal(15,2)
   nextPaymentDate DateTime @map("next_payment_date") @db.Date
   frequency PaymentFrequency @default(MONTHLY)
-  reminderDays Int @default(3) @map("reminder_days") @db.UnsignedInt
+  reminderDays Int @default(3) @map("reminder_days")
   isActive Boolean @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   user User @relation(fields:[userId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_recurring_user")
-  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_recurring_category")
-  @@index([categoryId],map:"fk_recurring_category")
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict,onUpdate:NoAction,map:"fk_recurring_category_pg")
+  @@index([categoryId],map:"idx_recurring_category")
   @@index([isActive,nextPaymentDate],map:"idx_recurring_due")
   @@index([userId,isActive,nextPaymentDate],map:"idx_recurring_user_due")
   @@map("recurring_payments")

@@ -2,7 +2,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 const isLocalHost=(host:string)=>host==='localhost'||host==='127.0.0.1'||host.startsWith('192.168.')||host.startsWith('10.')||/^172\.(1[6-9]|2\d|3[01])\./.test(host);
-const apiBase=()=>{const configured=process.env.NEXT_PUBLIC_API_URL;if(typeof window!=='undefined'&&isLocalHost(window.location.hostname)&&(!configured||isLocalHost(new URL(configured).hostname)))return `http://${window.location.hostname}:3001/api`;return configured||'http://localhost:3001/api'};
+const apiBase=()=>{const configured=process.env.NEXT_PUBLIC_API_URL;if(typeof window!=='undefined'&&isLocalHost(window.location.hostname)&&(!configured||isLocalHost(new URL(configured,window.location.origin).hostname)))return `http://${window.location.hostname}:3001/api`;return configured||'/api'};
 type User={id:string;email:string;name:string;phone?:string|null;city?:string|null;avatarData?:string|null}; type Category={id:string;userId:string|null;name:string;type:'INCOME'|'EXPENSE'};
 type Movement={id:string;type:string;amount:string;date:string;description:string|null;category:Category};
 type Budget={id:string;limitAmount:string;spent:string;available:string;percentage:number;state:string;category:Category;startDate:string;endDate:string}; type Contribution={id:string;amount:string;date:string};

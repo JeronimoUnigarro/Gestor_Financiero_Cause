@@ -8,13 +8,14 @@ import { AnalyzeFinancesDto, BudgetDto, CategoryDto, CategoryUpdateDto, ChangePa
 @Controller()
 export class AppController {
   constructor(private app: AppService) {}
+  @Get('health') health() { return { status: 'ok' }; }
   @Post('auth/register') register(@Body() body:RegisterDto) { return this.app.register(body); }
   @Post('auth/login') async login(@Body() body:LoginDto,@Res({passthrough:true}) res:Response) {
     const result=await this.app.login(body.email,body.password);
-    res.cookie('cauce_session',result.token,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',path:'/',maxAge:7*24*60*60*1000});
+    res.cookie('cauce_session',result.token,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:process.env.NODE_ENV==='production'?'none':'lax',path:'/',maxAge:7*24*60*60*1000});
     return result.profile;
   }
-  @UseGuards(AuthGuard) @Post('auth/logout') logout(@Res({passthrough:true}) res:Response) { res.clearCookie('cauce_session',{httpOnly:true,sameSite:'lax',path:'/'}); return {message:'Sesión cerrada.'}; }
+  @UseGuards(AuthGuard) @Post('auth/logout') logout(@Res({passthrough:true}) res:Response) { res.clearCookie('cauce_session',{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:process.env.NODE_ENV==='production'?'none':'lax',path:'/'}); return {message:'Sesión cerrada.'}; }
   @UseGuards(AuthGuard) @Get('profile') profile(@CurrentUser() u:any) { return this.app.profile(u.sub); }
   @UseGuards(AuthGuard) @Patch('profile') updateProfile(@CurrentUser() u:any,@Body() b:ProfileDto) { return this.app.updateProfile(u.sub,b); }
   @UseGuards(AuthGuard) @Post('profile/password') changePassword(@CurrentUser() u:any,@Body() b:ChangePasswordDto) { return this.app.changePassword(u.sub,b.currentPassword,b.newPassword); }
