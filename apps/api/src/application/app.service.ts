@@ -64,7 +64,7 @@ export class AppService {
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
     let response:Response;
     try{response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':apiKey,'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({systemInstruction:{parts:[{text:developer}]},contents:[{role:'user',parts:[{text:JSON.stringify(context)}]}],generationConfig:{maxOutputTokens:1200,responseMimeType:'application/json',responseJsonSchema:FINANCIAL_ANALYSIS_SCHEMA}})});}
-    catch(error:any){if(error?.name==='AbortError')throw new GatewayTimeoutException('El análisis de CAUCE IA tardó demasiado. Inténtalo de nuevo.');throw new ServiceUnavailableException('No fue posible conectar con CAUCE IA. Inténtalo más tarde.');}
+    catch(error:any){if(error?.name==='AbortError')throw new GatewayTimeoutException('El análisis de CAUCE IA tardó demasiado. Inténtalo de nuevo.');console.error('[CAUCE IA] Gemini fetch failed',{name:error?.name||'Error',code:error?.cause?.code||null,causeName:error?.cause?.name||null});throw new ServiceUnavailableException('No fue posible conectar con CAUCE IA. Inténtalo más tarde.');}
     finally{clearTimeout(timer);}
     if(response.status===429)throw new ServiceUnavailableException('Gemini alcanzó el límite gratuito temporal. Espera un momento y vuelve a intentarlo.');
     if(!response.ok)throw new ServiceUnavailableException('Gemini no pudo completar el análisis. Inténtalo más tarde.');
