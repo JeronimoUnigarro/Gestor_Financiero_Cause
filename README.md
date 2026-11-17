@@ -37,6 +37,8 @@ La proyección es una estimación explicable, no una garantía. No anticipa ingr
 
 ## Despliegue
 
+Cada push a `main` despliega automáticamente el frontend en Vercel y la API en Render.
+
 El diseño de despliegue previsto es Next.js en Vercel, API NestJS en Render y PostgreSQL en Supabase. Sigue [la guía de despliegue](docs/DESPLIEGUE.md) para configurar servicios y variables. El baseline PostgreSQL está pensado para una base nueva y vacía; no conecta ni migra automáticamente los datos de una base MySQL existente. CAUCE IA usa `gemini-3.1-flash-lite` por defecto; `GEMINI_MODEL` permite cambiarlo. Guarda `GEMINI_API_KEY` únicamente en Render.
 
 ## Documentación
